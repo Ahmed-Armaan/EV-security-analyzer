@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdio.h>
 #include "scheduler.h"
 
 #define USART1 0x40011000
@@ -18,15 +17,6 @@
 #define BAUD_RATE_REG(x) (*(volatile uint32_t *)((x) + 0x08))
 #define CONTROL_REG(x)   (*(volatile uint32_t *)((x) + 0x0C))
 
-// control registor bits functions
-//[13]  UE          USART Enable
-//[3]   TE          Transmitter Enable
-//[2]   RE          Receiver Enable
-
-// status register bits function
-// [5] RXNE check for data read
-// [7] check for data write
-
 #define RXNE (1<<5)
 #define TXE  (1<<7)
 #define UE   (1<<13)
@@ -40,6 +30,9 @@ char reader_buff_2[BUFF_SIZE];
 char reader_buff_3[BUFF_SIZE];
 char writer_buff_2[BUFF_SIZE];
 char writer_buff_3[BUFF_SIZE];
+
+static volatile int battery_msg_ready = 0;
+static volatile int engine_msg_ready = 0;
 
 static void uart_init(uint32_t base) {
     BAUD_RATE_REG(base) = 0x683;
@@ -63,33 +56,46 @@ static char uart_c_read(uint32_t base) {
     return DATA_REG(base);
 }
 
-static void uart_buff_reader(uint32_t base, char *buffer, int *index) {
-    if(uart_read_available(base)) {
+static int uart_buff_reader(uint32_t base, char *buffer, int *index) {
+    int msg_complete = 0;
+
+    while(uart_read_available(base)) {
         char c = uart_c_read(base);
 
         if(c == '\n') {
             buffer[*index] = '\0';
             *index = 0;
+            msg_complete = 1;
+            break;
         }
         else if(*index < BUFF_SIZE - 1) {
             buffer[(*index)++] = c;
         }
         else {
-            buffer[*index] = '\0';
+            buffer[0] = '\0';
             *index = 0;
+            msg_complete = 0;
+            break;
         }
     }
+
+    return msg_complete;
 }
 
 static void data_parser(char* buff, int* a, int* b){
     int read_data_count = 0;
     int curr_data = 0;
+    int has_digit = 0;
+
+    *a = -1;
+    *b = -1;
 
     while(*buff){
         if(*buff >= '0' && *buff <= '9'){
             curr_data = curr_data * 10 + (*buff - '0');
+            has_digit = 1;
         }
-        else{
+        else if(has_digit){
             if(read_data_count == 0){
                 *a = curr_data;
                 read_data_count = 1;
@@ -99,14 +105,20 @@ static void data_parser(char* buff, int* a, int* b){
                 return;
             }
             curr_data = 0;
+            has_digit = 0;
         }
         buff++;
+    }
+
+    if(has_digit && read_data_count == 1){
+        *b = curr_data;
     }
 }
 
 static void malfunction_detector(const char *device, char* buff){
     uart_log(USART1, device);
     uart_log(USART1, buff);
+    uart_log(USART1, "\n");
 }
 
 static void task_battery_malfunction(){
@@ -114,6 +126,7 @@ static void task_battery_malfunction(){
     update_priority(task_battery_malfunction, 0);
     scheduler_unready(task_battery_malfunction);
     reader_buff_2[0] = '\0';
+    battery_msg_ready = 0;
 }
 
 static void task_engine_malfunction(){
@@ -121,12 +134,16 @@ static void task_engine_malfunction(){
     update_priority(task_engine_malfunction, 0);
     scheduler_unready(task_engine_malfunction);
     reader_buff_3[0] = '\0';
+    engine_msg_ready = 0;
 }
 
 static int idx2 = 0;
 static void task_uart2_reader(){
-    uart_buff_reader(USART2, reader_buff_2, &idx2);
-    if(reader_buff_2[0] != '\0'){
+    if(uart_buff_reader(USART2, reader_buff_2, &idx2)){
+        battery_msg_ready = 1;
+    }
+
+    if(battery_msg_ready){
         int t = -1, c = -1;
         data_parser(reader_buff_2, &t, &c);
 
@@ -137,13 +154,19 @@ static void task_uart2_reader(){
             update_priority(task_battery_malfunction, 2);
             scheduler_ready(task_battery_malfunction);
         }
+
+        battery_msg_ready = 0;
+ //       reader_buff_2[0] = '\0';
     }
 }
 
 static int idx3 = 0;
 static void task_uart3_reader(){
-    uart_buff_reader(USART3, reader_buff_3, &idx3);
-    if(reader_buff_3[0] != '\0'){
+    if(uart_buff_reader(USART3, reader_buff_3, &idx3)){
+        engine_msg_ready = 1;
+    }
+
+    if(engine_msg_ready){
         int t = -1, c = -1;
         data_parser(reader_buff_3, &t, &c);
 
@@ -154,6 +177,9 @@ static void task_uart3_reader(){
             update_priority(task_engine_malfunction, 2);
             scheduler_ready(task_engine_malfunction);
         }
+
+        engine_msg_ready = 0;
+//        reader_buff_3[0] = '\0';
     }
 }
 

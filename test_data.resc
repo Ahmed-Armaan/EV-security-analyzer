@@ -1,0 +1,193 @@
+using sysbus
+
+mach create "stm32"
+machine LoadPlatformDescription @/opt/renode/platforms/boards/stm32f4_discovery.repl
+sysbus LoadELF @firmware.elf
+
+showAnalyzer sysbus.usart1
+start
+
+sleep 1
+echo "=== Starting Sensor Simulation ==="
+echo "Battery thresholds: Temp > 80°C, Current > 20A"
+echo "Engine thresholds: Temp > 80°C, Current > 17A"
+echo ""
+
+echo "[1] Sending normal readings..."
+sysbus.usart2 WriteChar 0x34  # 4
+sysbus.usart2 WriteChar 0x35  # 5
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x31  # 1
+sysbus.usart2 WriteChar 0x36  # 6
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x35  # 5
+sysbus.usart3 WriteChar 0x35  # 5
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x34  # 4
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo "[2] Sending normal readings..."
+sysbus.usart2 WriteChar 0x33  # 3
+sysbus.usart2 WriteChar 0x38  # 8
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x31  # 1
+sysbus.usart2 WriteChar 0x35  # 5
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x36  # 6
+sysbus.usart3 WriteChar 0x32  # 2
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x33  # 3
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo "[3] FAULT: Battery over-temperature!"
+sysbus.usart2 WriteChar 0x38  # 8
+sysbus.usart2 WriteChar 0x35  # 5
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x31  # 1
+sysbus.usart2 WriteChar 0x36  # 6
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x35  # 5
+sysbus.usart3 WriteChar 0x38  # 8
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x34  # 4
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo "[4] Sending normal readings..."
+sysbus.usart2 WriteChar 0x34  # 4
+sysbus.usart2 WriteChar 0x32  # 2
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x31  # 1
+sysbus.usart2 WriteChar 0x37  # 7
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x36  # 6
+sysbus.usart3 WriteChar 0x34  # 4
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x35  # 5
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo "[5] Sending normal readings..."
+sysbus.usart2 WriteChar 0x35  # 5
+sysbus.usart2 WriteChar 0x30  # 0
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x31  # 1
+sysbus.usart2 WriteChar 0x36  # 6
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x36  # 6
+sysbus.usart3 WriteChar 0x38  # 8
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x32  # 2
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo "[6] FAULT: Engine over-current!"
+sysbus.usart2 WriteChar 0x34  # 4
+sysbus.usart2 WriteChar 0x34  # 4
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x31  # 1
+sysbus.usart2 WriteChar 0x35  # 5
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x36  # 6
+sysbus.usart3 WriteChar 0x35  # 5
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x39  # 9
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo "[7] Sending normal readings..."
+sysbus.usart2 WriteChar 0x35  # 5
+sysbus.usart2 WriteChar 0x32  # 2
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x31  # 1
+sysbus.usart2 WriteChar 0x38  # 8
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x37  # 7
+sysbus.usart3 WriteChar 0x30  # 0
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x34  # 4
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo "[8] FAULT: Battery over-current!"
+sysbus.usart2 WriteChar 0x35  # 5
+sysbus.usart2 WriteChar 0x35  # 5
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x32  # 2
+sysbus.usart2 WriteChar 0x32  # 2
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x35  # 5
+sysbus.usart3 WriteChar 0x39  # 9
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x33  # 3
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo "[9] Sending normal readings..."
+sysbus.usart2 WriteChar 0x34  # 4
+sysbus.usart2 WriteChar 0x38  # 8
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x31  # 1
+sysbus.usart2 WriteChar 0x36  # 6
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x36  # 6
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x34  # 4
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo "[10] FAULT: Engine over-temperature!"
+sysbus.usart2 WriteChar 0x34  # 4
+sysbus.usart2 WriteChar 0x36  # 6
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x31  # 1
+sysbus.usart2 WriteChar 0x37  # 7
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x39  # 9
+sysbus.usart3 WriteChar 0x32  # 2
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x35  # 5
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo "[11] Sending normal readings..."
+sysbus.usart2 WriteChar 0x34  # 4
+sysbus.usart2 WriteChar 0x30  # 0
+sysbus.usart2 WriteChar 0x2C  # ,
+sysbus.usart2 WriteChar 0x31  # 1
+sysbus.usart2 WriteChar 0x35  # 5
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x36  # 6
+sysbus.usart3 WriteChar 0x36  # 6
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x31  # 1
+sysbus.usart3 WriteChar 0x33  # 3
+sysbus.usart3 WriteChar 0x0A  # \n
+sleep 2
+
+echo ""
+echo "=== Simulation sequence complete ==="
