@@ -1,5 +1,6 @@
 #include <stdint.h>
-#include "scheduler.h"
+#include "../inc/scheduler.h"
+#include "../inc/watchdog.h"
 
 #define USART1 0x40011000
 #define USART2 0x40004400
@@ -17,6 +18,15 @@
 #define BAUD_RATE_REG(x) (*(volatile uint32_t *)((x) + 0x08))
 #define CONTROL_REG(x)   (*(volatile uint32_t *)((x) + 0x0C))
 
+// control registor bits functions
+//[13]  UE          USART Enable
+//[3]   TE          Transmitter Enable
+//[2]   RE          Receiver Enable
+
+// status register bits function
+// [5] RXNE check for data read
+// [7] check for data write
+//
 #define RXNE (1<<5)
 #define TXE  (1<<7)
 #define UE   (1<<13)
@@ -189,6 +199,7 @@ int main(void) {
     uart_init(USART3);
     uart_log(USART1, "MCU Running\n");
 
+    watchdog_init();
     scheduler_init();
 
     insert_task(task_uart2_reader, 1);
@@ -201,6 +212,7 @@ int main(void) {
     while(1){
         tcb_t *t = get_task();
         if(t) t->fn();
+        pet_watchdog();
     }
 
     return 0;

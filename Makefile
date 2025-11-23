@@ -1,27 +1,28 @@
 TARGET = firmware
-OBJS = startup.o main.o scheduler.o
+
+SRC = src/startup.c src/main.c src/scheduler.c
+OBJ = $(SRC:.c=.o)
 
 CC = arm-none-eabi-gcc
-LD = arm-none-eabi-ld
 OBJCOPY = arm-none-eabi-objcopy
 
-CFLAGS = -mcpu=cortex-m3 -mthumb -O2 -ffreestanding -nostdlib
-LDFLAGS = -T linker.ld
+CFLAGS = -mcpu=cortex-m3 -mthumb -O2 -ffreestanding -nostdlib -Iinc
+LDFLAGS = -T linker.ld -nostdlib -ffreestanding
 
-all: $(TARGET).elf $(TARGET).bin
+all: build $(TARGET).elf $(TARGET).bin
+	@rm -rf src/*.o
 
-$(TARGET).elf: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(TARGET).elf
-	@rm -rf *.o
+build:
+	mkdir -p build
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-startup.o: startup.c
-	$(CC) -c startup.c -mcpu=cortex-m3 -mthumb -o startup.o
+$(TARGET).elf: $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) $(LDFLAGS) -o build/$(TARGET).elf
 
 $(TARGET).bin: $(TARGET).elf
-	$(OBJCOPY) -O binary $(TARGET).elf $(TARGET).bin
+	$(OBJCOPY) -O binary build/$(TARGET).elf build/$(TARGET).bin
 
 clean:
-	rm -f *.o *.elf *.bin
+	rm -f src/*.o build/*.elf build/*.bin

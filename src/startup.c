@@ -7,7 +7,8 @@ void Reset_Handler(void);
 __attribute__((section(".isr_vector")))
 uint32_t vectors[] = {
     STACK_TOP,
-    (uint32_t)Reset_Handler
+    (uint32_t)Reset_Handler,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
 void Reset_Handler(void) {

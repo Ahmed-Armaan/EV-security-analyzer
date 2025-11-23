@@ -13,6 +13,16 @@ echo "Battery thresholds: Temp > 80°C, Current > 20A"
 echo "Engine thresholds: Temp > 80°C, Current > 17A"
 echo ""
 
+echo "[0] Sending faulty data..."
+sysbus.usart2 WriteChar 0x34  # 4
+sysbus.usart2 WriteChar 0x35  # 5
+sysbus.usart2 WriteChar 0x0A  # \n
+sleep 0.1
+sysbus.usart3 WriteChar 0x35  # 5
+sysbus.usart3 WriteChar 0x35  # 5
+sysbus.usart3 WriteChar 0x2C  # ,
+sysbus.usart3 WriteChar 0x0A  # \n
+
 echo "[1] Sending normal readings..."
 sysbus.usart2 WriteChar 0x34  # 4
 sysbus.usart2 WriteChar 0x35  # 5

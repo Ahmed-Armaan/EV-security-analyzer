@@ -1,0 +1,76 @@
+using sysbus
+
+mach create "stm32"
+machine LoadPlatformDescription @/opt/renode/platforms/boards/stm32f4_discovery.repl
+sysbus LoadELF @../build/firmware.elf
+
+showAnalyzer sysbus.usart1
+start
+
+sleep 1
+echo "=== Starting Concurrent Sensor + Heartbeat Simulation ==="
+
+python
+"""
+import random
+import time
+import threading
+
+def send_reading(uart_path, temp, current):
+    uart = self.Machine[uart_path]
+    for char in str(temp):
+        uart.WriteChar(ord(char))
+    uart.WriteChar(0x2C)
+    for char in str(current):
+        uart.WriteChar(ord(char))
+    uart.WriteChar(0x0A)
+
+# Heartbeat thread
+def heartbeat_task():
+    uart = self.Machine["sysbus.usart1"]
+    for i in range(50):
+        uart.WriteChar(0x48)  # 'H'
+        uart.WriteChar(0x42)  # 'B'
+        uart.WriteChar(0x0A)  # '\n'
+        print("[HB] Heartbeat #{}".format(i))
+        time.sleep(2)  # Every 2 seconds
+
+# Sensor data thread
+def sensor_task():
+    for i in range(10):
+        b_temp = random.randint(30, 95)
+        b_current = random.randint(12, 25)
+        e_temp = random.randint(40, 100)
+        e_current = random.randint(11, 20)
+        
+        fault = ""
+        if b_temp > 80:
+            fault = " [BATT OVER-TEMP]"
+        elif b_current > 20:
+            fault = " [BATT OVER-CURR]"
+        elif e_temp > 80:
+            fault = " [ENG OVER-TEMP]"
+        elif e_current > 17:
+            fault = " [ENG OVER-CURR]"
+        
+        print("[{}] Batt: {}C,{}A | Eng: {}C,{}A{}".format(
+            i, b_temp, b_current, e_temp, e_current, fault))
+        
+        send_reading("sysbus.usart2", b_temp, b_current)
+        time.sleep(0.1)
+        send_reading("sysbus.usart3", e_temp, e_current)
+        time.sleep(5)  # Every 5 seconds
+
+# Start both threads
+hb_thread = threading.Thread(target=heartbeat_task)
+sensor_thread = threading.Thread(target=sensor_task)
+
+hb_thread.start()
+sensor_thread.start()
+
+# Wait for both to complete
+hb_thread.join()
+sensor_thread.join()
+
+print("=== All simulations complete ===")
+"""

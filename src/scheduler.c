@@ -1,5 +1,4 @@
-/* scheduler.c */
-#include "scheduler.h"
+#include "../inc/scheduler.h"
 #include <stddef.h>
 
 static tcb_t task_list[MAX_TASK];
