@@ -1,6 +1,6 @@
 TARGET = firmware
 
-SRC = src/startup.c src/main.c src/scheduler.c
+SRC = src/startup.c src/main.c src/scheduler.c src/watchdog.c src/peripheral_health_check.c
 OBJ = $(SRC:.c=.o)
 
 CC = arm-none-eabi-gcc

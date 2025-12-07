@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include "../inc/scheduler.h"
 #include "../inc/watchdog.h"
+#include "../inc/peripheral_health_check.h"
+#include "../inc/logger.h"
 
 #define USART1 0x40011000
 #define USART2 0x40004400
@@ -49,7 +51,7 @@ static void uart_init(uint32_t base) {
     CONTROL_REG(base) = UE | TE | RE;
 }
 
-static void uart_log(uint32_t base, const char *str) {
+void uart_log(uint32_t base, const char *str) {
     while (*str) {
         while (!(STATUS_REG(base) & TXE));
         DATA_REG(base) = *str;
@@ -133,6 +135,10 @@ static void malfunction_detector(const char *device, char* buff){
 
 static void task_battery_malfunction(){
     malfunction_detector("Battery Fault: ", reader_buff_2);
+    SPI_write("Battery Fault:");
+    SPI_write(reader_buff_2);
+    SPI_write("\n");
+
     update_priority(task_battery_malfunction, 0);
     scheduler_unready(task_battery_malfunction);
     reader_buff_2[0] = '\0';
@@ -141,6 +147,11 @@ static void task_battery_malfunction(){
 
 static void task_engine_malfunction(){
     malfunction_detector("Engine Fault: ", reader_buff_3);
+    SPI_write("Engine Fault:");
+    SPI_write(reader_buff_3);
+    SPI_write("\n");
+
+
     update_priority(task_engine_malfunction, 0);
     scheduler_unready(task_engine_malfunction);
     reader_buff_3[0] = '\0';
@@ -167,6 +178,7 @@ static void task_uart2_reader(){
 
         battery_msg_ready = 0;
  //       reader_buff_2[0] = '\0';
+        last_battery_tick = system_tick;
     }
 }
 
@@ -190,6 +202,7 @@ static void task_uart3_reader(){
 
         engine_msg_ready = 0;
 //        reader_buff_3[0] = '\0';
+        last_egg_tick = system_tick;
     }
 }
 
@@ -201,6 +214,8 @@ int main(void) {
 
     watchdog_init();
     scheduler_init();
+    peripheral_watcher_init();
+    SPI_init();
 
     insert_task(task_uart2_reader, 1);
     insert_task(task_uart3_reader, 1);

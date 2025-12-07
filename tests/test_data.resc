@@ -2,7 +2,7 @@ using sysbus
 
 mach create "stm32"
 machine LoadPlatformDescription @/opt/renode/platforms/boards/stm32f4_discovery.repl
-sysbus LoadELF @firmware.elf
+sysbus LoadELF @../build/firmware.elf
 
 showAnalyzer sysbus.usart1
 start
