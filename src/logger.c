@@ -55,9 +55,14 @@ void SPI_init(){
 }
 
 void SPI_write_byte(uint8_t data) {
-    while (!(SPI1_SR & SPI_SR_TXE));
+    uint32_t timer = 100000; // timer to avoid getting stuck at SPI Write
+    while (!(SPI1_SR & SPI_SR_TXE) && --timer > 0);
+    if(timer == 0) return;
     SPI1_DR = data;
-    while (SPI1_SR & SPI_SR_BSY);
+
+    timer = 100000;
+    while (SPI1_SR & SPI_SR_BSY && --timer > 0);
+    if(timer == 0) return;
     volatile uint8_t dummy = SPI1_DR;
 }
 

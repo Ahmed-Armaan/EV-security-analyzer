@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "../inc/peripheral_health_check.h"
-#include "../inc/logger.h"
+#include "../inc/scheduler.h"
 
 #define USART1 0x40011000
 
@@ -15,6 +15,7 @@ static volatile int curr_failure_state = GOOD;
 volatile int system_tick = 0;
 volatile int last_battery_tick = 0;
 volatile int last_egg_tick = 0;
+extern void task_spi_logger();
 
 void peripheral_watcher_init(void){
     RCC_APB1ENR |= RCC_APB1ENR_TIM7EN;
@@ -45,6 +46,8 @@ void peripheral_watcher_IRQ(void){
     if (curr_failure_state == CRITICAL) {
         extern void uart_log(uint32_t base, const char *str);
         uart_log(USART1, "CRITICAL: peripheral failure\n");
-        SPI_write("CRITICAL: peripheral failure\n");
+
+        update_priority(task_spi_logger, 2);
+        scheduler_ready(task_spi_logger);
     }
 }

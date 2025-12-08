@@ -1,7 +1,7 @@
 #ifndef _SCHEDULER_H
 #define _SCHEDULER_H
 #include <stdint.h>
-#define MAX_TASK 4
+#define MAX_TASK 5
 #define MAX_PRIORITIES 3
 
 typedef void (*task)(void);

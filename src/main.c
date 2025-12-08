@@ -28,7 +28,7 @@
 // status register bits function
 // [5] RXNE check for data read
 // [7] check for data write
-//
+
 #define RXNE (1<<5)
 #define TXE  (1<<7)
 #define UE   (1<<13)
@@ -151,7 +151,6 @@ static void task_engine_malfunction(){
     SPI_write(reader_buff_3);
     SPI_write("\n");
 
-
     update_priority(task_engine_malfunction, 0);
     scheduler_unready(task_engine_malfunction);
     reader_buff_3[0] = '\0';
@@ -177,7 +176,7 @@ static void task_uart2_reader(){
         }
 
         battery_msg_ready = 0;
- //       reader_buff_2[0] = '\0';
+        //       reader_buff_2[0] = '\0';
         last_battery_tick = system_tick;
     }
 }
@@ -201,9 +200,15 @@ static void task_uart3_reader(){
         }
 
         engine_msg_ready = 0;
-//        reader_buff_3[0] = '\0';
+        //        reader_buff_3[0] = '\0';
         last_egg_tick = system_tick;
     }
+}
+
+void task_spi_logger(){
+    SPI_write("CRITICAL: peripheral failure\n");
+    scheduler_unready(task_spi_logger);
+    update_priority(task_spi_logger, 0);
 }
 
 int main(void) {
@@ -221,8 +226,10 @@ int main(void) {
     insert_task(task_uart3_reader, 1);
     insert_task(task_battery_malfunction, 0);
     insert_task(task_engine_malfunction, 0);
+    insert_task(task_spi_logger, 0);
     scheduler_unready(task_battery_malfunction);
     scheduler_unready(task_engine_malfunction);
+    scheduler_unready(task_spi_logger);
 
     while(1){
         tcb_t *t = get_task();
